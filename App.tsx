@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import DropArrow from "./assets/DropArrow";
-import { StyleSheet, View, Keyboard } from "react-native";
+import { View, Keyboard, StyleSheet } from "react-native";
 import {
   Box,
   Button,
@@ -17,9 +17,12 @@ const CalculatorScreen: React.FC = () => {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [result, setResult] = useState<number>(0);
+  const [totalMonths, setTotalMonths] = useState<number>(0);
+  const [totalDays, setTotalDays] = useState<number>(0);
   const [date, setDate] = useState<Date>(new Date());
   const [open, setOpen] = useState<boolean>(false);
-  const [start, setStart] = useState(true);
+  const [start, setStart] = useState<boolean>(true);
+  const [interestPM,setInterestPM]=useState<number>(0);
 
   const validateInput = (value: string, isInteger = false): string => {
     let amt = value.replace(/[^0-9.]/g, "");
@@ -45,32 +48,30 @@ const CalculatorScreen: React.FC = () => {
     const [day1, month1, year1] = startDate.split('-').map(Number);
     const [day2, month2, year2] = endDate.split('-').map(Number);
 
-    // Calculate the total number of months from the start year and month
     let totalMonths = (year2 - year1) * 12 + (month2 - month1);
-
-    // Calculate remaining days assuming each month has 30 days
     let remainingDays = day2 - day1;
 
     if (remainingDays < 0) {
         totalMonths -= 1;
-        remainingDays += 30; // Add 30 days from the previous month
+        remainingDays += 30;
     }
     
-    const totalDays=totalMonths*30+remainingDays;
+    const totalDays = totalMonths * 30 + remainingDays;
+
+    setTotalMonths(totalMonths);
+    setTotalDays(totalDays);
     
-    // Convert startAmount and interestRate to numbers
     const principal = parseFloat(startAmount);
     const rate = parseFloat(interestRate);
-
-    // Simple interest calculation for example (use actual formula based on requirements)
-    const interest = principal * (rate / 3000) * (totalDays);
+    setInterestPM(principal*(rate/100));
+    const interest = (interestPM/30) * (totalDays);
 
     setResult(principal + interest);
   };
 
   const formatDate = (date: Date): string => {
     const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Month is zero-indexed
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
     
     return `${day}-${month}-${year}`;
@@ -88,111 +89,153 @@ const CalculatorScreen: React.FC = () => {
 
   return (
     <NativeBaseProvider>
-      <Box style={styles.screen}>
-        <VStack space={4} style={styles.content}>
-          <Input
-            placeholder="Original Amount"
-            style={styles.input}
-            keyboardType="number-pad"
-            maxLength={10}
-            value={startAmount}
-            onChangeText={text => setStartAmount(validateInput(text))}
-          />
-          <Input
-            placeholder="Interest Rate %"
-            style={styles.input}
-            keyboardType="number-pad"
-            maxLength={5}
-            value={interestRate}
-            onChangeText={text => setInterestRate(validateInput(text))}
-          />
-          <View style={styles.dateContainer}>
+      <Box style={styles.body}>
+        <Box style={styles.container}>
+          <VStack space={4}>
             <Input
-              placeholder="Start Date"
-              style={styles.dateInput}
+              placeholder="Original Amount"
               keyboardType="number-pad"
               maxLength={10}
-              value={startDate}
-              editable={false}
+              value={startAmount}
+              style={styles.input}
+              onChangeText={text => setStartAmount(validateInput(text))}
             />
-            <Button style={styles.dateButton} onPress={handleStartDate}>
-              <DropArrow />
-            </Button>
-          </View>
-          <View style={styles.dateContainer}>
             <Input
-              placeholder="End Date"
-              style={styles.dateInput}
+              placeholder="Interest Rate %"
               keyboardType="number-pad"
-              maxLength={10}
-              value={endDate}
-              editable={false}
+              maxLength={5}
+              value={interestRate}
+              style={styles.input}
+              onChangeText={text => setInterestRate(validateInput(text))}
             />
-            <Button style={styles.dateButton} onPress={handleEndDate}>
-              <DropArrow />
+            <View style={styles.dateInputContainer}>
+              <Input
+                placeholder="Start Date"
+                keyboardType="number-pad"
+                maxLength={10}
+                value={startDate}
+                editable={false}
+                style={styles.dateInput}
+              />
+              <Button onPress={handleStartDate} style={styles.dropArrowButton}>
+                <DropArrow />
+              </Button>
+            </View>
+            <View style={styles.dateInputContainer}>
+              <Input
+                placeholder="End Date"
+                keyboardType="number-pad"
+                maxLength={10}
+                value={endDate}
+                editable={false}
+                style={styles.dateInput}
+              />
+              <Button onPress={handleEndDate} style={styles.dropArrowButton}>
+                <DropArrow />
+              </Button>
+            </View>
+            <DatePicker
+              modal
+              mode="date"
+              open={open}
+              date={date}
+              onConfirm={(date) => {
+                setOpen(false);
+                const formattedDate = formatDate(date);
+                start ? setStartDate(formattedDate) : setEndDate(formattedDate);
+              }}
+              onCancel={() => {
+                setOpen(false);
+              }}
+            />
+            <Button style={styles.btn} onPress={calculateMortgage}>
+              <Text style={styles.btnText}>Calculate</Text>
             </Button>
-          </View>
-          <DatePicker
-            modal
-            mode="date"
-            open={open}
-            date={date}
-            onConfirm={(date) => {
-              setOpen(false);
-              const formattedDate = formatDate(date);
-              start ? setStartDate(formattedDate) : setEndDate(formattedDate);
-            }}
-            onCancel={() => {
-              setOpen(false);
-            }}
-          />
-          <Button onPress={calculateMortgage}>
-            <Text style={styles.buttonText}>Calculate</Text>
-          </Button>
-        </VStack>
-        {result > 0 && (
-          <Box>
-            <Text>
-              {startAmount} invested from {startDate} to {endDate}, with a 
-              annual interest rate of {interestRate}%, would yield:
-            </Text>
-            <Text>{result.toFixed(2)}</Text>
-          </Box>
-        )}
+          </VStack>
+          {result > 0 && (
+            <Box>
+              <Box style={styles.resultBox}>
+              <Text style={styles.resultText}>
+                Net Amount
+              </Text>
+              <Text style={styles.resultText}>
+                {result.toFixed(2)}
+              </Text>
+              </Box>
+              <Box style={styles.resultBox}>
+              <Text style={styles.resultText}>
+                Interest Per Month
+              </Text>
+              <Text style={styles.resultText}>
+                {interestPM}
+              </Text>
+              </Box>
+              <Box style={styles.resultBox}>
+              <Text style={styles.resultText}>
+                Duration
+              </Text>
+              <Text style={styles.resultText}>
+                {totalMonths} months {totalDays} days
+              </Text>
+              </Box>
+            </Box>
+          )}
+        </Box>
       </Box>
     </NativeBaseProvider>
   );
 };
 
 const styles = StyleSheet.create({
-  screen: {
+  body: {
+    backgroundColor: "#171717",
     flex: 1,
-    marginTop: 40,
-    marginBottom: 20,
-    marginHorizontal: 50,
     alignItems: "center",
   },
-  content: {
-    width: "80%",
+  container: {
+    width: "50%",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 40,
   },
   input: {
-    textAlign: "center",
+    fontFamily: "Montserrat-Medium",
+    fontSize: 14,
+    color: "#FFD700",
   },
-  buttonText: {
-    textAlign: "center",
-    color: "white",
-  },
-  dateContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+  dateInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   dateInput: {
     flex: 1,
-    textAlign: "center",
+    fontFamily: "Montserrat-Medium",
+    fontSize: 14,
+    color: "#FFD700",
   },
-  dateButton: {
+  dropArrowButton: {
     marginLeft: 10,
-    height: 40,
+    backgroundColor: "#FFD700",
+  },
+  btn: {
+    backgroundColor: "#FFD700",
+    marginTop:-20,
+  },
+  btnText: {
+    fontFamily: "Montserrat-Bold",
+    fontSize: 16,
+  },
+  resultBox:{
+    backgroundColor:"grey",
+    paddingHorizontal:10,
+  },
+  resultText: {
+    paddingTop: 20,
+    fontFamily: "Montserrat-Bold",
+    fontSize: 18,
+    color: "#FFD700",
   },
 });
 
