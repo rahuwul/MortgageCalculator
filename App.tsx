@@ -7,11 +7,9 @@ import {
   VStack,
   Input,
   Text,
- 
   NativeBaseProvider,
 } from "native-base";
 import DatePicker from 'react-native-date-picker';
-
 
 const CalculatorScreen: React.FC = () => {
   const [startAmount, setStartAmount] = useState<string>("");
@@ -43,31 +41,50 @@ const CalculatorScreen: React.FC = () => {
 
   const calculateMortgage = () => {
     Keyboard.dismiss();
-    if (parseFloat(interestRate) > 0) {
-      let amt =
-        parseFloat(startAmount) *
-        Math.pow(1 + parseFloat(interestRate) / 100,2 );
-      setResult(parseFloat(amt.toFixed(2)));
-    }
-  };
-  const formatDate = (date: Date): string => {
     
+    const [day1, month1, year1] = startDate.split('-').map(Number);
+    const [day2, month2, year2] = endDate.split('-').map(Number);
+
+    // Calculate the total number of months from the start year and month
+    let totalMonths = (year2 - year1) * 12 + (month2 - month1);
+
+    // Calculate remaining days assuming each month has 30 days
+    let remainingDays = day2 - day1;
+
+    if (remainingDays < 0) {
+        totalMonths -= 1;
+        remainingDays += 30; // Add 30 days from the previous month
+    }
+    
+    const totalDays=totalMonths*30+remainingDays;
+    
+    // Convert startAmount and interestRate to numbers
+    const principal = parseFloat(startAmount);
+    const rate = parseFloat(interestRate);
+
+    // Simple interest calculation for example (use actual formula based on requirements)
+    const interest = principal * (rate / 3000) * (totalDays);
+
+    setResult(principal + interest);
+  };
+
+  const formatDate = (date: Date): string => {
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Month is zero-indexed
     const year = date.getFullYear();
-  
     
     return `${day}-${month}-${year}`;
   };
-  const handleStartDate=()=>{
-     setStart(true);
-     setOpen(true); 
-    }
-  const handleEndDate=()=>{
-     setStart(false);
-     setOpen(true); 
-    }
 
+  const handleStartDate = () => {
+    setStart(true);
+    setOpen(true); 
+  }
+
+  const handleEndDate = () => {
+    setStart(false);
+    setOpen(true); 
+  }
 
   return (
     <NativeBaseProvider>
@@ -79,14 +96,15 @@ const CalculatorScreen: React.FC = () => {
             keyboardType="number-pad"
             maxLength={10}
             value={startAmount}
+            onChangeText={text => setStartAmount(validateInput(text))}
           />
           <Input
             placeholder="Interest Rate %"
             style={styles.input}
             keyboardType="number-pad"
-            maxLength={10}
-            
+            maxLength={5}
             value={interestRate}
+            onChangeText={text => setInterestRate(validateInput(text))}
           />
           <View style={styles.dateContainer}>
             <Input
@@ -95,9 +113,10 @@ const CalculatorScreen: React.FC = () => {
               keyboardType="number-pad"
               maxLength={10}
               value={startDate}
+              editable={false}
             />
-            <Button style={styles.dateButton} onPress={()=>handleStartDate()}>
-            <DropArrow/>
+            <Button style={styles.dateButton} onPress={handleStartDate}>
+              <DropArrow />
             </Button>
           </View>
           <View style={styles.dateContainer}>
@@ -107,9 +126,10 @@ const CalculatorScreen: React.FC = () => {
               keyboardType="number-pad"
               maxLength={10}
               value={endDate}
+              editable={false}
             />
-            <Button style={styles.dateButton} onPress={()=>handleEndDate()}>
-            <DropArrow/>
+            <Button style={styles.dateButton} onPress={handleEndDate}>
+              <DropArrow />
             </Button>
           </View>
           <DatePicker
@@ -119,16 +139,13 @@ const CalculatorScreen: React.FC = () => {
             date={date}
             onConfirm={(date) => {
               setOpen(false);
-              setDate(date);
-              const formattedDate=formatDate(date);
-              start?setStartDate(formattedDate):setEndDate(formattedDate);
-            
+              const formattedDate = formatDate(date);
+              start ? setStartDate(formattedDate) : setEndDate(formattedDate);
             }}
             onCancel={() => {
               setOpen(false);
             }}
           />
-
           <Button onPress={calculateMortgage}>
             <Text style={styles.buttonText}>Calculate</Text>
           </Button>
@@ -136,10 +153,10 @@ const CalculatorScreen: React.FC = () => {
         {result > 0 && (
           <Box>
             <Text>
-              {startAmount} invested for  years, with a compounded
+              {startAmount} invested from {startDate} to {endDate}, with a 
               annual interest rate of {interestRate}%, would yield:
             </Text>
-            <Text>{result}</Text>
+            <Text>{result.toFixed(2)}</Text>
           </Box>
         )}
       </Box>
@@ -155,14 +172,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 50,
     alignItems: "center",
   },
-  heading: {
-    paddingVertical: 20,
-    textAlign: "center",
-  },
-  text: {
-    paddingVertical: 20,
-    textAlign: "center",
-  },
   content: {
     width: "80%",
   },
@@ -171,6 +180,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     textAlign: "center",
+    color: "white",
   },
   dateContainer: {
     flexDirection: "row",
