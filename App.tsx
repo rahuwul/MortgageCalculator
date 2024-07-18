@@ -56,7 +56,7 @@ const CalculatorScreen: React.FC = () => {
     if ((day1 === 28 || day1 === 29) && (month1 === 2)) {
       day1 = 30;
     }
-    
+
     let totalMonths = (year2 - year1) * 12 + (month2 - month1);
     let remainingDays = day2 - day1;
 
@@ -95,6 +95,18 @@ const CalculatorScreen: React.FC = () => {
     setOpen(true);
   }
 
+  const reset = () => {
+    setStartAmount("");
+    setInterestRate("");
+    setStartDate("");
+    setEndDate("");
+    setResult(0);
+    setInterestPM(0);
+    setDaysRemaining(0);
+    setMonthsTotal(0);
+  }
+
+
   return (
     <NativeBaseProvider>
       <Box style={styles.body}>
@@ -121,6 +133,7 @@ const CalculatorScreen: React.FC = () => {
                 placeholder="Start Date"
                 keyboardType="number-pad"
                 maxLength={10}
+
                 value={startDate}
                 editable={false}
                 style={styles.dateInput}
@@ -134,6 +147,7 @@ const CalculatorScreen: React.FC = () => {
                 placeholder="End Date"
                 keyboardType="number-pad"
                 maxLength={10}
+
                 value={endDate}
                 editable={false}
                 style={styles.dateInput}
@@ -159,10 +173,16 @@ const CalculatorScreen: React.FC = () => {
                 setOpen(false);
               }}
             />
+
+          </VStack>
+          <View style={styles.btnBox}>
             <Button style={styles.btn} onPress={calculateMortgage}>
               <Text style={styles.btnText}>Calculate</Text>
             </Button>
-          </VStack>
+            <Button style={styles.btnReset} onPress={calculateMortgage}>
+              <Text style={styles.btnText} onPress={reset}>R</Text>
+            </Button>
+          </View>
         </Box>
         {result > 0 && (
           <Box>
@@ -200,6 +220,7 @@ const CalculatorScreen: React.FC = () => {
             </Box>
           </Box>
         )}
+
       </Box>
     </NativeBaseProvider>
   );
@@ -241,10 +262,20 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     backgroundColor: "#FFD700",
   },
+  btnBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 56,
+    marginBottom:16,
+  },
   btn: {
+    width: 256,
     backgroundColor: "#FFD700",
-    marginTop: -10,
-    marginBottom: 20,
+  },
+  btnReset: {
+    width: 48,
+    marginLeft: 10,
+    backgroundColor: "#FFD700",
   },
   btnText: {
     fontFamily: "Montserrat-Bold",
