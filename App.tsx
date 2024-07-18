@@ -145,6 +145,9 @@ const CalculatorScreen: React.FC = () => {
             <DatePicker
               modal
               mode="date"
+              theme="dark"
+              buttonColor="#FFD700"
+              dividerColor="#FFD700"
               open={open}
               date={date}
               onConfirm={(date) => {
