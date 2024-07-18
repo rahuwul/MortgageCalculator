@@ -17,12 +17,14 @@ const CalculatorScreen: React.FC = () => {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [result, setResult] = useState<number>(0);
-  const [totalMonths, setTotalMonths] = useState<number>(0);
-  const [totalDays, setTotalDays] = useState<number>(0);
+
   const [date, setDate] = useState<Date>(new Date());
   const [open, setOpen] = useState<boolean>(false);
   const [start, setStart] = useState<boolean>(true);
-  const [interestPM,setInterestPM]=useState<number>(0);
+
+  const [interestPM, setInterestPM] = useState<number>(0);
+  const [daysRemaining, setDaysRemaining] = useState<number>(0);
+  const [monthsTotal, setMonthsTotal] = useState<number>(0);
 
   const validateInput = (value: string, isInteger = false): string => {
     let amt = value.replace(/[^0-9.]/g, "");
@@ -44,28 +46,34 @@ const CalculatorScreen: React.FC = () => {
 
   const calculateMortgage = () => {
     Keyboard.dismiss();
-    
-    const [day1, month1, year1] = startDate.split('-').map(Number);
-    const [day2, month2, year2] = endDate.split('-').map(Number);
 
+    let [day1, month1, year1] = startDate.split('-').map(Number);
+    let [day2, month2, year2] = endDate.split('-').map(Number);
+
+    if (day1 === 31 && day2 !== 31) {
+      day1 -= 1;
+    }
+    if ((day1 === 28 || day1 === 29) && (month1 === 2)) {
+      day1 = 30;
+    }
+    
     let totalMonths = (year2 - year1) * 12 + (month2 - month1);
     let remainingDays = day2 - day1;
 
     if (remainingDays < 0) {
-        totalMonths -= 1;
-        remainingDays += 30;
+      totalMonths -= 1;
+      remainingDays += 30;
     }
-    
-    const totalDays = totalMonths * 30 + remainingDays;
 
-    setTotalMonths(totalMonths);
-    setTotalDays(totalDays);
-    
+    const totalDays = totalMonths * 30 + remainingDays;
     const principal = parseFloat(startAmount);
     const rate = parseFloat(interestRate);
-    setInterestPM(principal*(rate/100));
-    const interest = (interestPM/30) * (totalDays);
+    const interestPerMonth = principal * (rate / 100);
+    const interest = (interestPerMonth / 30) * (totalDays);
 
+    setInterestPM(interestPerMonth);
+    setDaysRemaining(remainingDays);
+    setMonthsTotal(totalMonths);
     setResult(principal + interest);
   };
 
@@ -73,18 +81,18 @@ const CalculatorScreen: React.FC = () => {
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
-    
+
     return `${day}-${month}-${year}`;
   };
 
   const handleStartDate = () => {
     setStart(true);
-    setOpen(true); 
+    setOpen(true);
   }
 
   const handleEndDate = () => {
     setStart(false);
-    setOpen(true); 
+    setOpen(true);
   }
 
   return (
@@ -152,35 +160,43 @@ const CalculatorScreen: React.FC = () => {
               <Text style={styles.btnText}>Calculate</Text>
             </Button>
           </VStack>
-          {result > 0 && (
-            <Box>
-              <Box style={styles.resultBox}>
+        </Box>
+        {result > 0 && (
+          <Box>
+            <Box style={styles.resultBox}>
               <Text style={styles.resultText}>
                 Net Amount
               </Text>
-              <Text style={styles.resultText}>
+              <Text style={styles.resultMainText}>
                 {result.toFixed(2)}
               </Text>
-              </Box>
-              <Box style={styles.resultBox}>
+            </Box>
+            <Box style={styles.resultBox}>
               <Text style={styles.resultText}>
                 Interest Per Month
               </Text>
-              <Text style={styles.resultText}>
+              <Text style={styles.resultMainText}>
                 {interestPM}
               </Text>
-              </Box>
-              <Box style={styles.resultBox}>
+            </Box>
+            <Box style={styles.resultBox}>
+              <Text style={styles.resultText}>
+                Interest Per Day
+              </Text>
+              <Text style={styles.resultMainText}>
+                {interestPM / 30}
+              </Text>
+            </Box>
+            <Box style={styles.resultBox}>
               <Text style={styles.resultText}>
                 Duration
               </Text>
-              <Text style={styles.resultText}>
-                {totalMonths} months {totalDays} days
+              <Text style={styles.resultMainText}>
+                {monthsTotal}months {daysRemaining}days = {monthsTotal * 30 + daysRemaining} days
               </Text>
-              </Box>
             </Box>
-          )}
-        </Box>
+          </Box>
+        )}
       </Box>
     </NativeBaseProvider>
   );
@@ -200,14 +216,17 @@ const styles = StyleSheet.create({
     paddingTop: 40,
   },
   input: {
+    paddingHorizontal: 4,
+    backgroundColor: "#3B3B3B",
     fontFamily: "Montserrat-Medium",
     fontSize: 14,
     color: "#FFD700",
   },
   dateInputContainer: {
+    backgroundColor: "#3B3B3B",
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+
   },
   dateInput: {
     flex: 1,
@@ -221,17 +240,30 @@ const styles = StyleSheet.create({
   },
   btn: {
     backgroundColor: "#FFD700",
-    marginTop:-20,
+    marginTop: -10,
+    marginBottom: 20,
   },
   btnText: {
     fontFamily: "Montserrat-Bold",
     fontSize: 16,
   },
-  resultBox:{
-    backgroundColor:"grey",
-    paddingHorizontal:10,
+  resultBox: {
+    backgroundColor: "#3B3B3B",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginVertical: 5,
+    display: "flex",
+    justifyContent: "center",
+    borderRadius: 10,
   },
   resultText: {
+    marginBottom: -15,
+    fontFamily: "Montserrat-Regular",
+    fontSize: 12,
+    color: "#FFD700",
+  },
+  resultMainText: {
+
     paddingTop: 20,
     fontFamily: "Montserrat-Bold",
     fontSize: 18,
